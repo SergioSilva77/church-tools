@@ -584,6 +584,12 @@ async function baixarInformativo() {
       dadosInformativo.dataReferencia
     );
 
+    // Atualiza dadosInformativo com o caminho do vídeo extraído
+    dadosInformativo.videoExtraidoPath = resultado.videoExtraidoPath;
+    dadosInformativo.localZipPath = resultado.localZipPath;
+    dadosInformativo.tipo = resultado.tipo;
+    dadosInformativo.baixadoEm = resultado.baixadoEm;
+
     document.getElementById('informativoBaixado').classList.remove('hidden');
     document.getElementById('informativoPath').textContent = resultado.videoExtraidoPath;
 
