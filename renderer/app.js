@@ -614,14 +614,19 @@ async function salvarAcao() {
 
     if (acaoEmEdicao) {
       await api.acoes.update(acaoEmEdicao.id, acaoData);
-      mostrarToast('Ação atualizada com sucesso', 'success');
     } else {
       await api.acoes.create(acaoData);
-      mostrarToast('Ação cadastrada com sucesso', 'success');
     }
 
-    document.getElementById('modalAcao').classList.add('hidden');
+    // Recarrega dados ANTES de fechar o modal
     await carregarDados();
+
+    // Fecha modal
+    document.getElementById('modalAcao').classList.add('hidden');
+
+    // Mostra toast após fechar modal
+    const mensagem = acaoEmEdicao ? 'Ação atualizada com sucesso' : 'Ação cadastrada com sucesso';
+    mostrarToast(mensagem, 'success');
 
   } catch (error) {
     mostrarToast('Erro ao salvar ação: ' + error.message, 'error');
