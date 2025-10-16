@@ -4,64 +4,82 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Church Util - Sonoplastia</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <!-- Google Fonts - Poppins -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Canvas de fundo animado -->
+  <canvas id="bg-canvas"></canvas>
   <!-- Header -->
-  <header class="header">
-    <div class="header-content">
-      <h1>Church Util - Sonoplastia</h1>
-      <div class="toolbar">
-        <button class="btn btn-primary" id="btnCadastrar">
-          ➕ Cadastrar Ação
+  <nav class="navbar navbar-dark bg-dark shadow-sm mb-4">
+    <div class="container-fluid">
+      <span class="navbar-brand mb-0 h1">
+        <i class="bi bi-music-note-beamed"></i> Church Util - Sonoplastia
+      </span>
+      <div class="d-flex gap-2 flex-wrap">
+        <button class="btn btn-primary btn-sm" id="btnCadastrar">
+          <i class="bi bi-plus-circle"></i> Cadastrar Ação
         </button>
-        <button class="btn btn-secondary" id="btnGerenciarDias">
-          📅 Gerenciar Dias
+        <button class="btn btn-outline-light btn-sm" id="btnGerenciarDias">
+          <i class="bi bi-calendar3"></i> Gerenciar Dias
         </button>
 
         <!-- Cronômetro -->
-        <div class="toolbar-group">
-          <label>Cronômetro (Tela:</label>
-          <input type="number" id="cronometroTela" value="0" min="0">
-          <button class="btn btn-small btn-success" id="btnAbrirCronometro">
-            ⏱️ Abrir
+        <div class="input-group input-group-sm" style="width: auto;">
+          <span class="input-group-text">Cronômetro</span>
+          <input type="number" class="form-control" id="cronometroTela" value="0" min="0" style="width: 60px;">
+          <button class="btn btn-success" id="btnAbrirCronometro">
+            <i class="bi bi-stopwatch"></i>
           </button>
         </div>
 
         <!-- Tela Preta -->
-        <div class="toolbar-group">
-          <label>Tela Preta (Tela:</label>
-          <input type="number" id="telaPretaTela" value="0" min="0">
-          <button class="btn btn-small btn-secondary" id="btnAbrirTelaPreta">
-            ⬛ Abrir
+        <div class="input-group input-group-sm" style="width: auto;">
+          <span class="input-group-text">Tela Preta</span>
+          <input type="number" class="form-control" id="telaPretaTela" value="0" min="0" style="width: 60px;">
+          <button class="btn btn-secondary" id="btnAbrirTelaPreta">
+            <i class="bi bi-square-fill"></i>
           </button>
         </div>
       </div>
     </div>
-  </header>
+  </nav>
 
   <!-- Container Principal -->
-  <div class="container">
+  <div class="container-fluid px-4">
     <!-- Filtros -->
-    <div class="filters">
-      <div class="filter-group">
-        <label>Filtrar por Dia:</label>
-        <select id="filtroDia">
-          <option value="">Todos</option>
-        </select>
+    <div class="card shadow-sm mb-4">
+      <div class="card-body">
+        <div class="row g-3 align-items-center">
+          <div class="col-md-4">
+            <label class="form-label mb-1"><i class="bi bi-calendar"></i> Filtrar por Dia:</label>
+            <select class="form-select form-select-sm" id="filtroDia">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label mb-1"><i class="bi bi-filter"></i> Filtrar por Categoria:</label>
+            <select class="form-select form-select-sm" id="filtroCategoria">
+              <option value="">Todas</option>
+              <option value="geral">Geral</option>
+              <option value="provai_vede">Provai e Vede</option>
+              <option value="informativo">Informativo</option>
+            </select>
+          </div>
+          <div class="col-md-4 d-flex align-items-end">
+            <button class="btn btn-outline-secondary btn-sm" id="btnRecarregar">
+              <i class="bi bi-arrow-clockwise"></i> Recarregar
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="filter-group">
-        <label>Filtrar por Categoria:</label>
-        <select id="filtroCategoria">
-          <option value="">Todas</option>
-          <option value="geral">Geral</option>
-          <option value="provai_vede">Provai e Vede</option>
-          <option value="informativo">Informativo</option>
-        </select>
-      </div>
-      <button class="btn btn-small btn-secondary" id="btnRecarregar">
-        🔄 Recarregar
-      </button>
     </div>
 
     <!-- Lista de Ações -->
@@ -80,121 +98,134 @@
   </div>
 
   <!-- Modal de Cadastro de Ação -->
-  <div id="modalAcao" class="modal-overlay hidden">
-    <div class="modal">
-      <div class="modal-header">
-        <h2 id="modalAcaoTitulo">Cadastrar Ação</h2>
-        <button class="modal-close" id="btnFecharModalAcao">×</button>
-      </div>
-      <div class="modal-body">
-        <form id="formAcao">
-          <div class="form-group">
-            <label>Título</label>
-            <input type="text" id="acaoTitulo" required>
-          </div>
+  <div class="modal fade" id="modalAcao" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modalAcaoTitulo">Cadastrar Ação</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="formAcao">
+            <div class="mb-3">
+              <label class="form-label">Título</label>
+              <input type="text" class="form-control" id="acaoTitulo" required>
+            </div>
 
-          <div class="form-group">
-            <label>Categoria</label>
-            <select id="acaoCategoria" required>
-              <option value="geral">Geral</option>
-              <option value="provai_vede">Provai e Vede</option>
-              <option value="informativo">Informativo</option>
-            </select>
-          </div>
+            <div class="mb-3">
+              <label class="form-label">Categoria</label>
+              <select class="form-select" id="acaoCategoria" required>
+                <option value="geral">Geral</option>
+                <option value="provai_vede">Provai e Vede</option>
+                <option value="informativo">Informativo</option>
+              </select>
+            </div>
 
-          <div class="form-group">
-            <label>Dia (opcional)</label>
-            <select id="acaoDia">
-              <option value="">Nenhum</option>
-            </select>
-          </div>
+            <div class="mb-3">
+              <label class="form-label">Dia (opcional)</label>
+              <select class="form-select" id="acaoDia">
+                <option value="">Nenhum</option>
+              </select>
+            </div>
 
-          <!-- Seção Geral -->
-          <div id="secaoGeral" class="hidden">
-            <div class="form-group">
-              <label>Arquivo (opcional)</label>
-              <div style="display: flex; gap: 8px;">
-                <input type="text" id="acaoArquivo" readonly>
-                <button type="button" class="btn btn-small btn-secondary" id="btnEscolherArquivo">
-                  Escolher
+            <!-- Seção Geral -->
+            <div id="secaoGeral" class="d-none">
+              <div class="mb-3">
+                <label class="form-label">Arquivo (opcional)</label>
+                <div class="input-group">
+                  <input type="text" class="form-control" id="acaoArquivo" readonly>
+                  <button type="button" class="btn btn-outline-secondary" id="btnEscolherArquivo">
+                    <i class="bi bi-folder2-open"></i> Escolher
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Seção Provai e Vede -->
+            <div id="secaoProvaiVede" class="d-none">
+              <div class="mb-3">
+                <label class="form-label">Trimestre: <span id="trimestreProvai" class="fw-bold"></span></label>
+                <button type="button" class="btn btn-sm btn-outline-secondary ms-2" id="btnRecarregarProvai">
+                  <i class="bi bi-arrow-clockwise"></i> Recarregar Lista
                 </button>
               </div>
-            </div>
-          </div>
-
-          <!-- Seção Provai e Vede -->
-          <div id="secaoProvaiVede" class="hidden">
-            <div class="form-group">
-              <label>Trimestre: <span id="trimestreProvai"></span></label>
-              <button type="button" class="btn btn-small btn-secondary" id="btnRecarregarProvai">
-                🔄 Recarregar Lista
-              </button>
-            </div>
-            <div id="videosProvaiContainer" class="videos-list hidden">
-              <div class="loading">
-                <div class="spinner"></div>
-                <p>Carregando vídeos...</p>
+              <div id="videosProvaiContainer" class="d-none mb-3" style="max-height: 300px; overflow-y: auto;">
+                <div class="text-center py-3">
+                  <div class="spinner-border spinner-border-sm" role="status"></div>
+                  <p class="mt-2 mb-0">Carregando vídeos...</p>
+                </div>
+              </div>
+              <div id="videoProvaiSelecionado" class="d-none alert alert-success">
+                <p class="mb-1"><strong>Vídeo Selecionado:</strong> <span id="videoProvaiTitulo"></span></p>
+                <p class="mb-0"><strong>Caminho:</strong> <small><span id="videoProvaiPath"></span></small></p>
               </div>
             </div>
-            <div id="videoProvaiSelecionado" class="hidden">
-              <p><strong>Vídeo Selecionado:</strong> <span id="videoProvaiTitulo"></span></p>
-              <p><strong>Caminho:</strong> <span id="videoProvaiPath"></span></p>
-            </div>
-          </div>
 
-          <!-- Seção Informativo -->
-          <div id="secaoInformativo" class="hidden">
-            <div class="form-group">
-              <label>Próximo Sábado: <span id="proximoSabado"></span></label>
-              <div id="informativoStatus" class="mt-2"></div>
-              <button type="button" class="btn btn-small btn-secondary" id="btnVerificarInformativo">
-                🔍 Verificar Disponibilidade
-              </button>
-              <button type="button" class="btn btn-small btn-success hidden" id="btnBaixarInformativo">
-                ⬇️ Baixar Informativo
-              </button>
+            <!-- Seção Informativo -->
+            <div id="secaoInformativo" class="d-none">
+              <div class="mb-3">
+                <label class="form-label">Próximo Sábado: <span id="proximoSabado" class="fw-bold"></span></label>
+                <div id="informativoStatus" class="my-2"></div>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btnVerificarInformativo">
+                  <i class="bi bi-search"></i> Verificar Disponibilidade
+                </button>
+                <button type="button" class="btn btn-sm btn-success d-none ms-2" id="btnBaixarInformativo">
+                  <i class="bi bi-download"></i> Baixar Informativo
+                </button>
+              </div>
+              <div id="informativoBaixado" class="d-none alert alert-success">
+                <p class="mb-0"><strong>Vídeo Baixado:</strong> <small><span id="informativoPath"></span></small></p>
+              </div>
             </div>
-            <div id="informativoBaixado" class="hidden">
-              <p><strong>Vídeo Baixado:</strong> <span id="informativoPath"></span></p>
-            </div>
-          </div>
 
-          <!-- Progresso de Download -->
-          <div id="progressoDownload" class="progress-container hidden">
-            <div class="progress-bar">
-              <div class="progress-fill" id="progressFill"></div>
+            <!-- Progresso de Download -->
+            <div id="progressoDownload" class="d-none mt-3">
+              <div class="progress">
+                <div class="progress-bar progress-bar-striped progress-bar-animated"
+                     role="progressbar" id="progressFill" style="width: 0%"></div>
+              </div>
+              <p class="text-center mt-2 mb-0" id="progressText">Baixando...</p>
             </div>
-            <p class="progress-text" id="progressText">Baixando...</p>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" id="btnCancelarAcao">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="btnSalvarAcao">Salvar</button>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-primary" id="btnSalvarAcao">
+            <i class="bi bi-save"></i> Salvar
+          </button>
+        </div>
       </div>
     </div>
   </div>
 
   <!-- Modal de Gerenciar Dias -->
-  <div id="modalDias" class="modal-overlay hidden">
-    <div class="modal">
-      <div class="modal-header">
-        <h2>Gerenciar Dias</h2>
-        <button class="modal-close" id="btnFecharModalDias">×</button>
-      </div>
-      <div class="modal-body">
-        <div class="form-group">
-          <label>Novo Dia</label>
-          <div style="display: flex; gap: 8px;">
-            <input type="text" id="novoDiaNome" placeholder="Ex: terça">
-            <button class="btn btn-primary" id="btnAdicionarDia">Adicionar</button>
-          </div>
+  <div class="modal fade" id="modalDias" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Gerenciar Dias</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
-        <div id="diasList"></div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Novo Dia</label>
+            <div class="input-group">
+              <input type="text" class="form-control" id="novoDiaNome" placeholder="Ex: terça">
+              <button class="btn btn-primary" id="btnAdicionarDia">
+                <i class="bi bi-plus-circle"></i> Adicionar
+              </button>
+            </div>
+          </div>
+          <div id="diasList" class="list-group"></div>
+        </div>
       </div>
     </div>
   </div>
 
+  <!-- Bootstrap 5 JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="background-animation.js"></script>
+  <script src="bootstrap-init.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

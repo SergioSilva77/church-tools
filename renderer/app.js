@@ -102,104 +102,128 @@ function renderizarAcoes() {
 // Cria card de ação
 function criarCardAcao(acao, index) {
   const card = document.createElement('div');
-  card.className = 'acao-card';
+  card.className = 'card shadow-sm mb-3';
   card.dataset.id = acao.id;
   card.draggable = true;
+  card.style.cursor = 'move';
 
-  // Informações da ação
-  const info = document.createElement('div');
-  info.className = 'acao-info';
+  const cardBody = document.createElement('div');
+  cardBody.className = 'card-body';
 
-  const titulo = document.createElement('div');
-  titulo.className = 'acao-titulo';
+  // Linha superior: Botão executar + Título
+  const topRow = document.createElement('div');
+  topRow.className = 'd-flex align-items-start gap-2 mb-2';
+
+  // Botão Executar (só ícone, grande)
+  const btnExecutar = document.createElement('button');
+  btnExecutar.className = 'btn btn-success btn-sm rounded-circle';
+  btnExecutar.innerHTML = '<i class="bi bi-play-fill"></i>';
+  btnExecutar.style.width = '40px';
+  btnExecutar.style.height = '40px';
+  btnExecutar.onclick = () => executarAcao(acao);
+  topRow.appendChild(btnExecutar);
+
+  // Título e badges
+  const titleSection = document.createElement('div');
+  titleSection.className = 'flex-grow-1';
+
+  const titulo = document.createElement('h6');
+  titulo.className = 'card-title mb-2 fw-bold';
   titulo.textContent = acao.titulo;
+  titleSection.appendChild(titulo);
 
-  const meta = document.createElement('div');
-  meta.className = 'acao-meta';
+  // Badges (tags pequenas)
+  const badgesDiv = document.createElement('div');
+  badgesDiv.className = 'd-flex gap-1 flex-wrap mb-2';
 
   // Badge de categoria
   const badgeCategoria = document.createElement('span');
-  badgeCategoria.className = 'badge badge-categoria';
+  badgeCategoria.className = 'badge bg-primary text-white';
+  badgeCategoria.style.fontSize = '0.7rem';
   badgeCategoria.textContent = getNomeCategoria(acao.categoria);
-  meta.appendChild(badgeCategoria);
+  badgesDiv.appendChild(badgeCategoria);
 
   // Badge de dia
   if (acao.diaId) {
     const dia = dias.find(d => d.id === acao.diaId);
     if (dia) {
       const badgeDia = document.createElement('span');
-      badgeDia.className = 'badge badge-dia';
+      badgeDia.className = 'badge bg-secondary text-white';
+      badgeDia.style.fontSize = '0.7rem';
       badgeDia.textContent = dia.nome;
-      meta.appendChild(badgeDia);
+      badgesDiv.appendChild(badgeDia);
     }
   }
 
   // Detalhes específicos por categoria
-  const detalhes = document.createElement('div');
-  detalhes.className = 'acao-detalhes';
-
   if (acao.categoria === 'geral' && acao.arquivoPath) {
-    detalhes.textContent = `Arquivo: ${acao.arquivoPath}`;
+    const detalheBadge = document.createElement('span');
+    detalheBadge.className = 'badge bg-info text-dark';
+    detalheBadge.style.fontSize = '0.7rem';
+    detalheBadge.innerHTML = '<i class="bi bi-file-earmark"></i> Arquivo';
+    badgesDiv.appendChild(detalheBadge);
   } else if (acao.categoria === 'provai_vede' && acao.categoriaMeta?.provai_vede?.videoSelecionado) {
-    const video = acao.categoriaMeta.provai_vede.videoSelecionado;
-    detalhes.textContent = `Vídeo: ${video.titulo}`;
+    const detalheBadge = document.createElement('span');
+    detalheBadge.className = 'badge bg-success text-white';
+    detalheBadge.style.fontSize = '0.7rem';
+    detalheBadge.innerHTML = '<i class="bi bi-camera-video"></i> Vídeo';
+    badgesDiv.appendChild(detalheBadge);
   } else if (acao.categoria === 'informativo' && acao.categoriaMeta?.informativo) {
     const info = acao.categoriaMeta.informativo;
     const statusBadge = document.createElement('span');
-    statusBadge.className = `badge-status ${info.status}`;
-    statusBadge.textContent = info.status === 'disponivel' ? 'Disponível' : 'Aguardando';
-    detalhes.appendChild(statusBadge);
-    detalhes.appendChild(document.createTextNode(` - ${info.dataReferencia}`));
+    statusBadge.className = info.status === 'disponivel' ? 'badge bg-success text-white' : 'badge bg-warning text-dark';
+    statusBadge.style.fontSize = '0.7rem';
+    statusBadge.innerHTML = info.status === 'disponivel'
+      ? '<i class="bi bi-check-circle"></i> Disponível'
+      : '<i class="bi bi-clock"></i> Aguardando';
+    badgesDiv.appendChild(statusBadge);
   }
 
-  info.appendChild(titulo);
-  info.appendChild(meta);
-  info.appendChild(detalhes);
+  titleSection.appendChild(badgesDiv);
+  topRow.appendChild(titleSection);
 
-  // Ações (botões)
-  const actions = document.createElement('div');
-  actions.className = 'acao-actions';
-
-  // Botão Executar/Abrir
-  const btnExecutar = document.createElement('button');
-  btnExecutar.className = 'btn btn-success btn-small';
-  btnExecutar.textContent = '▶️ Executar';
-  btnExecutar.onclick = () => executarAcao(acao);
-  actions.appendChild(btnExecutar);
+  // Botões de ação (editar, excluir, ordenar)
+  const actionsDiv = document.createElement('div');
+  actionsDiv.className = 'd-flex gap-1 flex-shrink-0';
 
   // Botão Editar
   const btnEditar = document.createElement('button');
-  btnEditar.className = 'btn btn-secondary btn-small';
-  btnEditar.textContent = '✏️ Editar';
+  btnEditar.className = 'btn btn-sm btn-outline-secondary';
+  btnEditar.innerHTML = '<i class="bi bi-pencil"></i>';
+  btnEditar.title = 'Editar';
   btnEditar.onclick = () => editarAcao(acao);
-  actions.appendChild(btnEditar);
+  actionsDiv.appendChild(btnEditar);
 
   // Botão Excluir
   const btnExcluir = document.createElement('button');
-  btnExcluir.className = 'btn btn-error btn-small';
-  btnExcluir.textContent = '🗑️ Excluir';
+  btnExcluir.className = 'btn btn-sm btn-outline-danger';
+  btnExcluir.innerHTML = '<i class="bi bi-trash"></i>';
+  btnExcluir.title = 'Excluir';
   btnExcluir.onclick = () => excluirAcao(acao.id);
-  actions.appendChild(btnExcluir);
+  actionsDiv.appendChild(btnExcluir);
 
   // Botões de reordenação
   if (index > 0) {
     const btnSubir = document.createElement('button');
-    btnSubir.className = 'btn btn-secondary btn-icon';
-    btnSubir.textContent = '↑';
+    btnSubir.className = 'btn btn-sm btn-outline-secondary';
+    btnSubir.innerHTML = '<i class="bi bi-arrow-up"></i>';
+    btnSubir.title = 'Mover para cima';
     btnSubir.onclick = () => moverAcao(acao.id, 'up');
-    actions.appendChild(btnSubir);
+    actionsDiv.appendChild(btnSubir);
   }
 
   if (index < acoes.length - 1) {
     const btnDescer = document.createElement('button');
-    btnDescer.className = 'btn btn-secondary btn-icon';
-    btnDescer.textContent = '↓';
+    btnDescer.className = 'btn btn-sm btn-outline-secondary';
+    btnDescer.innerHTML = '<i class="bi bi-arrow-down"></i>';
+    btnDescer.title = 'Mover para baixo';
     btnDescer.onclick = () => moverAcao(acao.id, 'down');
-    actions.appendChild(btnDescer);
+    actionsDiv.appendChild(btnDescer);
   }
 
-  card.appendChild(info);
-  card.appendChild(actions);
+  topRow.appendChild(actionsDiv);
+  cardBody.appendChild(topRow);
+  card.appendChild(cardBody);
 
   // Drag and drop
   card.addEventListener('dragstart', handleDragStart);
@@ -265,19 +289,19 @@ function editarAcao(acao) {
   if (acao.categoria === 'provai_vede' && acao.categoriaMeta?.provai_vede) {
     const pv = acao.categoriaMeta.provai_vede;
     if (pv.videoSelecionado) {
-      document.getElementById('videoProvaiSelecionado').classList.remove('hidden');
+      document.getElementById('videoProvaiSelecionado').classList.remove('d-none');
       document.getElementById('videoProvaiTitulo').textContent = pv.videoSelecionado.titulo;
       document.getElementById('videoProvaiPath').textContent = pv.videoSelecionado.localPath || 'Não baixado';
     }
   } else if (acao.categoria === 'informativo' && acao.categoriaMeta?.informativo) {
     const inf = acao.categoriaMeta.informativo;
     if (inf.videoExtraidoPath) {
-      document.getElementById('informativoBaixado').classList.remove('hidden');
+      document.getElementById('informativoBaixado').classList.remove('d-none');
       document.getElementById('informativoPath').textContent = inf.videoExtraidoPath;
     }
   }
 
-  document.getElementById('modalAcao').classList.remove('hidden');
+  mostrarModalAcao();
 }
 
 // Excluir ação
@@ -384,16 +408,7 @@ function setupEventListeners() {
       mostrarSecaoCategoria('geral');
     }
 
-    document.getElementById('modalAcao').classList.remove('hidden');
-  };
-
-  // Fechar modais
-  document.getElementById('btnFecharModalAcao').onclick = () => {
-    document.getElementById('modalAcao').classList.add('hidden');
-  };
-
-  document.getElementById('btnCancelarAcao').onclick = () => {
-    document.getElementById('modalAcao').classList.add('hidden');
+    mostrarModalAcao();
   };
 
   // Salvar ação
@@ -426,9 +441,6 @@ function setupEventListeners() {
 
   // Gerenciar Dias
   document.getElementById('btnGerenciarDias').onclick = abrirModalDias;
-  document.getElementById('btnFecharModalDias').onclick = () => {
-    document.getElementById('modalDias').classList.add('hidden');
-  };
   document.getElementById('btnAdicionarDia').onclick = adicionarDia;
 
   // Cronômetro e Tela Preta
@@ -447,17 +459,17 @@ function setupEventListeners() {
 
 // Mostrar seção por categoria
 function mostrarSecaoCategoria(categoria) {
-  document.getElementById('secaoGeral').classList.add('hidden');
-  document.getElementById('secaoProvaiVede').classList.add('hidden');
-  document.getElementById('secaoInformativo').classList.add('hidden');
+  document.getElementById('secaoGeral').classList.add('d-none');
+  document.getElementById('secaoProvaiVede').classList.add('d-none');
+  document.getElementById('secaoInformativo').classList.add('d-none');
 
   if (categoria === 'geral') {
-    document.getElementById('secaoGeral').classList.remove('hidden');
+    document.getElementById('secaoGeral').classList.remove('d-none');
   } else if (categoria === 'provai_vede') {
-    document.getElementById('secaoProvaiVede').classList.remove('hidden');
+    document.getElementById('secaoProvaiVede').classList.remove('d-none');
     carregarVideosProvai();
   } else if (categoria === 'informativo') {
-    document.getElementById('secaoInformativo').classList.remove('hidden');
+    document.getElementById('secaoInformativo').classList.remove('d-none');
     carregarProximoSabado();
   }
 }
@@ -466,8 +478,8 @@ function mostrarSecaoCategoria(categoria) {
 async function carregarVideosProvai(forcarReload = false) {
   try {
     const container = document.getElementById('videosProvaiContainer');
-    container.classList.remove('hidden');
-    container.innerHTML = '<div class="loading"><div class="spinner"></div><p>Carregando vídeos...</p></div>';
+    container.classList.remove('d-none');
+    container.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm" role="status"></div><p class="mt-2 mb-0">Carregando vídeos...</p></div>';
 
     const resultado = await api.provai.listarVideos(!forcarReload);
     dadosProvaiVede = resultado;
@@ -525,10 +537,10 @@ async function baixarVideoProvai(video) {
     );
 
     // Atualiza UI
-    document.getElementById('videoProvaiSelecionado').classList.remove('hidden');
+    document.getElementById('videoProvaiSelecionado').classList.remove('d-none');
     document.getElementById('videoProvaiTitulo').textContent = video.titulo;
     document.getElementById('videoProvaiPath').textContent = resultado.localPath;
-    document.getElementById('videosProvaiContainer').classList.add('hidden');
+    document.getElementById('videosProvaiContainer').classList.add('d-none');
 
     mostrarProgresso(false);
     mostrarToast('Vídeo baixado com sucesso', 'success');
@@ -561,11 +573,11 @@ async function verificarInformativo() {
     dadosInformativo = status;
 
     if (status.status === 'disponivel') {
-      statusDiv.innerHTML = '<span class="badge-status disponivel">✅ Disponível</span>';
-      document.getElementById('btnBaixarInformativo').classList.remove('hidden');
+      statusDiv.innerHTML = '<span class="badge bg-success">✅ Disponível</span>';
+      document.getElementById('btnBaixarInformativo').classList.remove('d-none');
     } else {
-      statusDiv.innerHTML = '<span class="badge-status aguardando">⏳ Ainda não liberado</span>';
-      document.getElementById('btnBaixarInformativo').classList.add('hidden');
+      statusDiv.innerHTML = '<span class="badge bg-warning text-dark">⏳ Ainda não liberado</span>';
+      document.getElementById('btnBaixarInformativo').classList.add('d-none');
     }
 
   } catch (error) {
@@ -590,7 +602,7 @@ async function baixarInformativo() {
     dadosInformativo.tipo = resultado.tipo;
     dadosInformativo.baixadoEm = resultado.baixadoEm;
 
-    document.getElementById('informativoBaixado').classList.remove('hidden');
+    document.getElementById('informativoBaixado').classList.remove('d-none');
     document.getElementById('informativoPath').textContent = resultado.videoExtraidoPath;
 
     mostrarProgresso(false);
@@ -655,7 +667,7 @@ async function salvarAcao() {
     await carregarDados();
 
     // Fecha modal
-    document.getElementById('modalAcao').classList.add('hidden');
+    esconderModalAcao();
 
     // Mostra toast após fechar modal
     const mensagem = acaoEmEdicao ? 'Ação atualizada com sucesso' : 'Ação cadastrada com sucesso';
@@ -668,7 +680,7 @@ async function salvarAcao() {
 
 // Gerenciar Dias
 async function abrirModalDias() {
-  document.getElementById('modalDias').classList.remove('hidden');
+  mostrarModalDias();
   await renderizarDias();
 }
 
@@ -678,15 +690,14 @@ async function renderizarDias() {
 
   dias.forEach(dia => {
     const item = document.createElement('div');
-    item.style.cssText = 'display: flex; gap: 8px; align-items: center; padding: 8px; background: var(--bg-card); border-radius: 8px; margin-top: 8px;';
+    item.className = 'list-group-item d-flex justify-content-between align-items-center';
 
     const nome = document.createElement('span');
     nome.textContent = dia.nome;
-    nome.style.flex = '1';
 
     const btnExcluir = document.createElement('button');
-    btnExcluir.className = 'btn btn-error btn-small';
-    btnExcluir.textContent = '🗑️ Excluir';
+    btnExcluir.className = 'btn btn-sm btn-outline-danger';
+    btnExcluir.innerHTML = '<i class="bi bi-trash"></i> Excluir';
     btnExcluir.onclick = async () => {
       if (confirm(`Excluir dia "${dia.nome}"?`)) {
         await api.dias.delete(dia.id);
@@ -720,9 +731,9 @@ async function adicionarDia() {
 function mostrarProgresso(mostrar) {
   const progressContainer = document.getElementById('progressoDownload');
   if (mostrar) {
-    progressContainer.classList.remove('hidden');
+    progressContainer.classList.remove('d-none');
   } else {
-    progressContainer.classList.add('hidden');
+    progressContainer.classList.add('d-none');
   }
 }
 
