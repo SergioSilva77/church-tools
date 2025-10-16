@@ -127,17 +127,20 @@ class DownloadManager {
     }
   }
 
-  // Detecta trimestre atual baseado na data
-  getTrimestre() {
-    const now = new Date();
-    const mes = now.getMonth(); // 0-11
-    const ano = now.getFullYear();
+  // Detecta trimestre baseado na data fornecida (ou atual) no timezone de São Paulo
+  getTrimestre(dataSabado = null) {
+    const tz = 'America/Sao_Paulo';
+    const d = dataSabado ? (dataSabado instanceof Date ? dataSabado : new Date(dataSabado)) : new Date();
 
-    let numeroTrimestre;
-    if (mes < 3) numeroTrimestre = 1;
-    else if (mes < 6) numeroTrimestre = 2;
-    else if (mes < 9) numeroTrimestre = 3;
-    else numeroTrimestre = 4;
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      year: 'numeric',
+      month: 'numeric'
+    }).formatToParts(d);
+
+    const ano = Number(parts.find(p => p.type === 'year').value);
+    const mes = Number(parts.find(p => p.type === 'month').value); // 1..12
+    const numeroTrimestre = Math.floor((mes - 1) / 3) + 1; // 1..4
 
     return {
       numero: numeroTrimestre,
@@ -224,27 +227,119 @@ class DownloadManager {
     return proximoSabado;
   }
 
-  // Formata data para padrão do Informativo (DDMMYY)
+  // Formata data para padrão do Informativo (DDMMYY) no timezone de São Paulo
   formatarDataInformativo(data) {
-    const dia = String(data.getDate()).padStart(2, '0');
-    const mes = String(data.getMonth() + 1).padStart(2, '0');
-    const ano = String(data.getFullYear()).slice(-2);
-    return `${dia}${mes}${ano}`;
+    const tz = 'America/Sao_Paulo';
+    const d = (data instanceof Date) ? data : new Date(data);
+
+    const parts = new Intl.DateTimeFormat('pt-BR', {
+      timeZone: tz,
+      day: '2-digit',
+      month: '2-digit',
+      year: '2-digit'
+    }).formatToParts(d);
+
+    const get = t => parts.find(p => p.type === t).value;
+    const dia = get('day');
+    const mes = get('month');
+    const ano2 = get('year'); // já vem com 2 dígitos em pt-BR
+
+    const out = `${dia}${mes}${ano2}`;
+    console.log(`Formatando data: ${out} (entrada: ${data})`);
+    return out;
   }
 
-  // Verifica status do Informativo
-  async verificarStatusInformativo(dataSabado) {
-    const trimestre = this.getTrimestre();
-    const dataFormatada = this.formatarDataInformativo(dataSabado);
-    const zipUrl = `https://files.adventistas.org/daniellocutor/informativo/${trimestre.nome}/informativo_${dataFormatada}_alta.zip`;
+  // Converte data para formato YYYY-MM-DD no timezone de São Paulo
+  toLocalYMD(date, tz = 'America/Sao_Paulo') {
+    const d = (date instanceof Date) ? date : new Date(date);
+    // 'en-CA' formata como YYYY-MM-DD
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(d);
+  }
 
-    const existe = await this.checkFileExists(zipUrl);
+  // Checa a primeira URL que responder OK (HEAD ou GET pequeno)
+  async checkFirstAvailable(urls) {
+    const tryHead = async (url) => {
+      try {
+        const protocol = url.startsWith('https') ? require('https') : require('http');
+        return new Promise((resolve) => {
+          const req = protocol.request(url, { method: 'HEAD' }, (response) => {
+            resolve(response.statusCode >= 200 && response.statusCode < 300);
+          });
+          req.on('error', () => resolve(false));
+          req.setTimeout(5000, () => {
+            req.destroy();
+            resolve(false);
+          });
+          req.end();
+        });
+      } catch {
+        return false;
+      }
+    };
+
+    const tryByte = async (url) => {
+      try {
+        const protocol = url.startsWith('https') ? require('https') : require('http');
+        return new Promise((resolve) => {
+          const req = protocol.request(url, {
+            method: 'GET',
+            headers: { 'Range': 'bytes=0-0' }
+          }, (response) => {
+            resolve(response.statusCode === 200 || response.statusCode === 206);
+          });
+          req.on('error', () => resolve(false));
+          req.setTimeout(5000, () => {
+            req.destroy();
+            resolve(false);
+          });
+          req.end();
+        });
+      } catch {
+        return false;
+      }
+    };
+
+    for (const u of urls) {
+      if (await tryHead(u) || await tryByte(u)) {
+        return { exists: true, url: u };
+      }
+    }
+    return { exists: false, url: urls[0] };
+  }
+
+  // Verifica status do Informativo (tenta _alta.zip e cai para _texto.docx)
+  async verificarStatusInformativo(dataSabado) {
+    const trimestre = this.getTrimestre(dataSabado);
+    const dataFormatada = this.formatarDataInformativo(dataSabado);
+    console.log(`---> ${dataSabado}`)
+
+    
+    const out = dataSabado.replace(/^(\d{4})-(\d{2})-(\d{2})$/, (_, y, m, d) => `${d}${m}${y.slice(-2)}`);
+
+
+    const base = `https://files.adventistas.org/daniellocutor/informativo/${trimestre.nome}/informativo_${out}`;
+    const candidatos = [
+      `${base}_alta.zip`,     // vídeo/ZIP em alta (quando disponível)
+      `${base}_texto.docx`,   // quase sempre disponível
+    ];
+
+
+    console.log(`Verificando Informativo para ${dataFormatada} no trimestre ${trimestre.nome}`);
+    console.log('URLs candidatas:', candidatos);
+
+    const found = await this.checkFirstAvailable(candidatos);
 
     return {
       trimestre: trimestre.nome,
-      dataReferencia: dataSabado.toISOString().split('T')[0],
-      zipUrl: zipUrl,
-      status: existe ? 'disponivel' : 'aguardando'
+      dataReferencia: this.toLocalYMD(dataSabado), // local SP, não UTC
+      zipUrl: found.url,
+      status: found.exists ? 'disponivel' : 'aguardando',
+      tipo: found.exists ? (found.url.endsWith('.zip') ? 'zip' : 'texto') : null
     };
   }
 
@@ -255,24 +350,35 @@ class DownloadManager {
       fs.mkdirSync(trimestreDir, { recursive: true });
     }
 
-    const zipFileName = path.basename(zipUrl);
-    const zipPath = path.join(trimestreDir, zipFileName);
+    const fileName = path.basename(zipUrl);
+    const filePath = path.join(trimestreDir, fileName);
 
-    // Baixa o ZIP
-    await this.downloadFile(zipUrl, zipPath, onProgress);
+    // Baixa o arquivo (ZIP ou DOCX)
+    await this.downloadFile(zipUrl, filePath, onProgress);
 
-    // Extrai o MP4
-    const videoPath = this.extractZip(zipPath, trimestreDir);
+    // Se for ZIP, extrai o MP4
+    if (zipUrl.endsWith('.zip')) {
+      const videoPath = this.extractZip(filePath, trimestreDir);
 
-    if (!videoPath) {
-      throw new Error('Nenhum arquivo MP4 encontrado no ZIP');
+      if (!videoPath) {
+        throw new Error('Nenhum arquivo MP4 encontrado no ZIP');
+      }
+
+      return {
+        localZipPath: filePath,
+        videoExtraidoPath: videoPath,
+        tipo: 'video',
+        baixadoEm: new Date().toISOString()
+      };
+    } else {
+      // Se for DOCX ou outro formato, retorna o caminho do arquivo
+      return {
+        localZipPath: null,
+        videoExtraidoPath: filePath,
+        tipo: 'texto',
+        baixadoEm: new Date().toISOString()
+      };
     }
-
-    return {
-      localZipPath: zipPath,
-      videoExtraidoPath: videoPath,
-      baixadoEm: new Date().toISOString()
-    };
   }
 
   // Sanitiza nome de arquivo

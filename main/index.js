@@ -192,7 +192,9 @@ function setupIpcHandlers() {
   // ========== INFORMATIVO ==========
   ipcMain.handle('informativo:status', async (event, { dataSabado }) => {
     try {
-      const data = dataSabado ? new Date(dataSabado) : downloadManager.getProximoSabado();
+      // Se receber dataSabado, passa como string para o downloadManager tratar
+      // Se não receber, usa o próximo sábado calculado
+      const data = dataSabado || downloadManager.getProximoSabado();
       return await downloadManager.verificarStatusInformativo(data);
     } catch (error) {
       throw new Error(error.message);

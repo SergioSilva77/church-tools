@@ -7,6 +7,8 @@ let dias = [];
 let acaoEmEdicao = null;
 let dadosProvaiVede = null;
 let dadosInformativo = null;
+let filtroAtualDia = ''; // Mantém filtro de dia ativo
+let filtroAtualCategoria = ''; // Mantém filtro de categoria ativo
 
 // Inicialização
 document.addEventListener('DOMContentLoaded', async () => {
@@ -36,6 +38,10 @@ function preencherFiltros() {
   const filtroDia = document.getElementById('filtroDia');
   const acaoDia = document.getElementById('acaoDia');
 
+  // Salva valores atuais antes de recriar
+  const valorFiltroDiaAtual = filtroDia.value || filtroAtualDia;
+  const valorFiltroCategoriaAtual = document.getElementById('filtroCategoria').value || filtroAtualCategoria;
+
   // Limpa e adiciona opção padrão
   filtroDia.innerHTML = '<option value="">Todos</option>';
   acaoDia.innerHTML = '<option value="">Nenhum</option>';
@@ -50,6 +56,14 @@ function preencherFiltros() {
     const option2 = option1.cloneNode(true);
     acaoDia.appendChild(option2);
   });
+
+  // Restaura valores salvos
+  filtroDia.value = valorFiltroDiaAtual;
+  document.getElementById('filtroCategoria').value = valorFiltroCategoriaAtual;
+
+  // Atualiza estado global
+  filtroAtualDia = valorFiltroDiaAtual;
+  filtroAtualCategoria = valorFiltroCategoriaAtual;
 }
 
 // Renderiza lista de ações
@@ -57,13 +71,13 @@ function renderizarAcoes() {
   const container = document.getElementById('acoesContainer');
   const emptyState = document.getElementById('emptyState');
 
-  // Aplica filtros
-  const filtroDia = document.getElementById('filtroDia').value;
-  const filtroCategoria = document.getElementById('filtroCategoria').value;
+  // Atualiza estado global dos filtros
+  filtroAtualDia = document.getElementById('filtroDia').value;
+  filtroAtualCategoria = document.getElementById('filtroCategoria').value;
 
   let acoesFiltradas = acoes.filter(acao => {
-    if (filtroDia && acao.diaId !== filtroDia) return false;
-    if (filtroCategoria && acao.categoria !== filtroCategoria) return false;
+    if (filtroAtualDia && acao.diaId !== filtroAtualDia) return false;
+    if (filtroAtualCategoria && acao.categoria !== filtroAtualCategoria) return false;
     return true;
   });
 
@@ -356,7 +370,20 @@ function setupEventListeners() {
     acaoEmEdicao = null;
     document.getElementById('modalAcaoTitulo').textContent = 'Cadastrar Ação';
     document.getElementById('formAcao').reset();
-    mostrarSecaoCategoria('geral');
+
+    // Pré-seleciona o dia filtrado (se houver) - DEPOIS do reset
+    if (filtroAtualDia) {
+      document.getElementById('acaoDia').value = filtroAtualDia;
+    }
+
+    // Pré-seleciona a categoria filtrada (se houver) - DEPOIS do reset
+    if (filtroAtualCategoria) {
+      document.getElementById('acaoCategoria').value = filtroAtualCategoria;
+      mostrarSecaoCategoria(filtroAtualCategoria);
+    } else {
+      mostrarSecaoCategoria('geral');
+    }
+
     document.getElementById('modalAcao').classList.remove('hidden');
   };
 
