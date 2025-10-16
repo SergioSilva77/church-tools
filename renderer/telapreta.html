@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tela Preta</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000000;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      cursor: none;
+    }
+
+    .btn-close {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      background: rgba(239, 68, 68, 0.8);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    body:hover .btn-close {
+      opacity: 1;
+      cursor: pointer;
+    }
+
+    .btn-close:hover {
+      background: rgba(220, 38, 38, 0.9);
+    }
+
+    .info {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255, 255, 255, 0.3);
+      font-size: 14px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    body:hover .info {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <button class="btn-close" onclick="window.close()">✕ Fechar</button>
+  <div class="info">Pressione ESC para fechar ou mova o mouse para ver o botão fechar</div>
+
+  <script>
+    // Fechar com tecla ESC
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Escape') {
+        window.close();
+      }
+    });
+
+    // Fechar com clique duplo
+    document.addEventListener('dblclick', () => {
+      window.close();
+    });
+  </script>
+</body>
+</html>

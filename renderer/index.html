@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Church Util - Sonoplastia</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-content">
+      <h1>Church Util - Sonoplastia</h1>
+      <div class="toolbar">
+        <button class="btn btn-primary" id="btnCadastrar">
+          ➕ Cadastrar Ação
+        </button>
+        <button class="btn btn-secondary" id="btnGerenciarDias">
+          📅 Gerenciar Dias
+        </button>
+
+        <!-- Cronômetro -->
+        <div class="toolbar-group">
+          <label>Cronômetro (Tela:</label>
+          <input type="number" id="cronometroTela" value="0" min="0">
+          <button class="btn btn-small btn-success" id="btnAbrirCronometro">
+            ⏱️ Abrir
+          </button>
+        </div>
+
+        <!-- Tela Preta -->
+        <div class="toolbar-group">
+          <label>Tela Preta (Tela:</label>
+          <input type="number" id="telaPretaTela" value="0" min="0">
+          <button class="btn btn-small btn-secondary" id="btnAbrirTelaPreta">
+            ⬛ Abrir
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Container Principal -->
+  <div class="container">
+    <!-- Filtros -->
+    <div class="filters">
+      <div class="filter-group">
+        <label>Filtrar por Dia:</label>
+        <select id="filtroDia">
+          <option value="">Todos</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Filtrar por Categoria:</label>
+        <select id="filtroCategoria">
+          <option value="">Todas</option>
+          <option value="geral">Geral</option>
+          <option value="provai_vede">Provai e Vede</option>
+          <option value="informativo">Informativo</option>
+        </select>
+      </div>
+      <button class="btn btn-small btn-secondary" id="btnRecarregar">
+        🔄 Recarregar
+      </button>
+    </div>
+
+    <!-- Lista de Ações -->
+    <div id="acoesContainer">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Carregando ações...</p>
+      </div>
+    </div>
+
+    <!-- Estado Vazio -->
+    <div id="emptyState" class="empty-state hidden">
+      <h3>Nenhuma Ação Cadastrada</h3>
+      <p>Clique em "Cadastrar Ação" para começar</p>
+    </div>
+  </div>
+
+  <!-- Modal de Cadastro de Ação -->
+  <div id="modalAcao" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalAcaoTitulo">Cadastrar Ação</h2>
+        <button class="modal-close" id="btnFecharModalAcao">×</button>
+      </div>
+      <div class="modal-body">
+        <form id="formAcao">
+          <div class="form-group">
+            <label>Título</label>
+            <input type="text" id="acaoTitulo" required>
+          </div>
+
+          <div class="form-group">
+            <label>Categoria</label>
+            <select id="acaoCategoria" required>
+              <option value="geral">Geral</option>
+              <option value="provai_vede">Provai e Vede</option>
+              <option value="informativo">Informativo</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Dia (opcional)</label>
+            <select id="acaoDia">
+              <option value="">Nenhum</option>
+            </select>
+          </div>
+
+          <!-- Seção Geral -->
+          <div id="secaoGeral" class="hidden">
+            <div class="form-group">
+              <label>Arquivo (opcional)</label>
+              <div style="display: flex; gap: 8px;">
+                <input type="text" id="acaoArquivo" readonly>
+                <button type="button" class="btn btn-small btn-secondary" id="btnEscolherArquivo">
+                  Escolher
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seção Provai e Vede -->
+          <div id="secaoProvaiVede" class="hidden">
+            <div class="form-group">
+              <label>Trimestre: <span id="trimestreProvai"></span></label>
+              <button type="button" class="btn btn-small btn-secondary" id="btnRecarregarProvai">
+                🔄 Recarregar Lista
+              </button>
+            </div>
+            <div id="videosProvaiContainer" class="videos-list hidden">
+              <div class="loading">
+                <div class="spinner"></div>
+                <p>Carregando vídeos...</p>
+              </div>
+            </div>
+            <div id="videoProvaiSelecionado" class="hidden">
+              <p><strong>Vídeo Selecionado:</strong> <span id="videoProvaiTitulo"></span></p>
+              <p><strong>Caminho:</strong> <span id="videoProvaiPath"></span></p>
+            </div>
+          </div>
+
+          <!-- Seção Informativo -->
+          <div id="secaoInformativo" class="hidden">
+            <div class="form-group">
+              <label>Próximo Sábado: <span id="proximoSabado"></span></label>
+              <div id="informativoStatus" class="mt-2"></div>
+              <button type="button" class="btn btn-small btn-secondary" id="btnVerificarInformativo">
+                🔍 Verificar Disponibilidade
+              </button>
+              <button type="button" class="btn btn-small btn-success hidden" id="btnBaixarInformativo">
+                ⬇️ Baixar Informativo
+              </button>
+            </div>
+            <div id="informativoBaixado" class="hidden">
+              <p><strong>Vídeo Baixado:</strong> <span id="informativoPath"></span></p>
+            </div>
+          </div>
+
+          <!-- Progresso de Download -->
+          <div id="progressoDownload" class="progress-container hidden">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p class="progress-text" id="progressText">Baixando...</p>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" id="btnCancelarAcao">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnSalvarAcao">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Gerenciar Dias -->
+  <div id="modalDias" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h2>Gerenciar Dias</h2>
+        <button class="modal-close" id="btnFecharModalDias">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Novo Dia</label>
+          <div style="display: flex; gap: 8px;">
+            <input type="text" id="novoDiaNome" placeholder="Ex: terça">
+            <button class="btn btn-primary" id="btnAdicionarDia">Adicionar</button>
+          </div>
+        </div>
+        <div id="diasList"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
